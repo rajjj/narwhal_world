@@ -1,0 +1,5 @@
+{
+    "image_name": "python:3.13-slim-bookworm",
+    "tag": "4.0.0-litestar-2.15.1",
+    "registry": "gcp"
+}
