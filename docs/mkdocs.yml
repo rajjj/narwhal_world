@@ -1,0 +1,88 @@
+# Project information
+site_name: Narwhal Documentation
+site_url: https://sama.com
+site_description: >-
+  Online documentation that will help you get started on the Narwhal team.
+
+# Repository Info
+repo_name: Sama/soln-eng
+repo_url: https://github.com/Samasource/soln-eng
+
+theme:
+  name: material
+  logo: assets/sama.png
+  favicon: assets/narwhal.png
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - content.code.copy
+    # - content.code.select
+    - search.share
+    # - search.suggest
+    - navigation.instant
+    - navigation.top
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      primary: purple
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: teal
+      toggle:
+        icon: material/brightness-5
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+# Add navigation items here
+nav:
+  - Narwhalious: index.md
+  - Naming Guidelines: naming_guidelines.md
+  - Poetry cheatsheet: poetry_cheatsheet.md
+  - Fsspec cheatsheet: fsspec_cheatsheet.md
+  - Getting Started:
+    - Setting up: getting_started.md
+    - Private python repo: private_pypi.md
+  - Narwhal Processing System:
+    - Start here: nps.md
+    - Examples: nps_examples.md
+    - NPS Extras: nps_extras.md
+  - NocoDB:
+    - Start here: nocodb.md
+  - Shared Libraries:
+    - Libnar: libnar.md
+    - Nartools: nartools_readme.md
+  - Important Links: important_links.md
+  - FAQ: faq.md
+plugins:
+  - search
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      auto_title: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true

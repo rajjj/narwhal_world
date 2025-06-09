@@ -1,0 +1,26 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: nps-prod
+  region: us-east-1
+  version: "1.24"
+
+vpc:
+  cidr: 10.10.0.0/16
+  # subnets:
+  #   private:
+  #     us-east-1a: { id: subnet-03e2591e3065faac4 }
+  #     us-east-1b: { id: subnet-0a9c76b210e627322 }
+  #   public:
+  #     us-east-1a: { id: subnet-01eee41e64ba4ea48 }
+  #     us-east-1b: { id: subnet-0511f855cfd192114 }
+
+fargateProfiles:
+  - name: fp-nps-prod
+    selectors:
+      - namespace: default
+      - namespace: kube-system
+      - namespace: zone*
+      - namespace: keda
+      - namespace: metric*

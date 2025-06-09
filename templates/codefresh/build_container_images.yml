@@ -1,0 +1,101 @@
+version: '1.0'
+stages:
+  - clone
+  - get_changes
+  # - aws_repo_update
+  - build_image
+  - push_image
+steps:
+  main_clone:
+      title: Cloning repo
+      type: git-clone
+      stage: clone
+      repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
+      revision: '${{CF_REVISION}}'
+  get_changes:
+      title: Grabbing git changes
+      stage: get_changes
+      image: ${{CI_PIPELINE_IMAGE}}
+      #image: public.ecr.aws/j1p3q0y5/ci_pipeline_builder:latest
+      shell: bash
+      commands:
+        - export GOOGLE_APPLICATION_CREDENTIALS=${{CF_VOLUME_PATH}}/cred.json
+        - mv ${{CI_SCRIPT_DIR}}/${{CI_SCRIPT_NAME}}.py .
+        - export GIT_HASH=${{CF_REVISION}}
+        - export STEP_NAME=${{CI_STEP_NAME}}
+        - python ${{CI_SCRIPT_NAME}}.py
+        - if [ -f ${{SHELL_SCRIPT}} ]; then chmod +x ./${{SHELL_SCRIPT}}; fi
+        - if [ -f ${{SHELL_SCRIPT}} ]; then ./${{SHELL_SCRIPT}}; fi
+        - if [ -f ${{SHELL_SCRIPT}} ]; then cf_export SAMA_BUILD=true; else cf_export SAMA_BUILD=false; fi
+#   aws_repo_steup:
+#     image: amazon/aws-cli:latest
+#     type: "freestyle"
+#     stage: aws_repo_update
+#     commands:
+#       - aws configure set aws_access_key_id ${{AWS_ID}}
+#       - aws configure set aws_secret_access_key ${{AWS_KEY}}
+# #       - echo AWS_TOKEN=$(aws ecr-public get-login-password --region us-east-1) >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+# #       - aws ecr --region ${{SAMA_AWS_REPO_REGION}} describe-repositories --repository-names ${{SAMA_IMAGE_NAME}} || aws ecr --region ${{SAMA_AWS_REPO_REGION}} create-repository --repository-name ${{SAMA_IMAGE_NAME}}
+#       - aws ecr --region ${{AWS_US}} describe-repositories --repository-name ${{SAMA_IMAGE_NAME}} > /dev/null || aws ecr --region ${{AWS_US}} create-repository --repository-name ${{SAMA_IMAGE_NAME}} > /dev/null
+#       - aws ecr --region ${{AWS_US}} put-lifecycle-policy --repository-name ${{SAMA_IMAGE_NAME}} --lifecycle-policy-text ${{ECR_LIFECYCLE_POLICY}} > /dev/null
+#       - aws ecr --region ${{AWS_EU}} describe-repositories --repository-name ${{SAMA_IMAGE_NAME}} > /dev/null || aws ecr --region ${{AWS_EU}} create-repository --repository-name ${{SAMA_IMAGE_NAME}} > /dev/null
+#       - aws ecr --region ${{AWS_EU}} put-lifecycle-policy --repository-name ${{SAMA_IMAGE_NAME}} --lifecycle-policy-text ${{ECR_LIFECYCLE_POLICY}} > /dev/null
+#     when:
+#       condition:
+#         any:
+#           aws_create: '"${{SAMA_BUILD_PROVIDER}}" == "aws"'
+#           both_create: '"${{SAMA_BUILD_PROVIDER}}" == "all"'
+  build_container:
+      title: BUILDING IMAGE
+      type: build
+      arguments:
+        buildkit: true
+      stage: build_image
+      disable_push: true
+      image_name: ${{SAMA_IMAGE_NAME}}
+      working_directory: ${{SAMA_WORK_DIR}}
+      dockerfile: Dockerfile
+      build_arguments:
+        - BUILD_IMAGE=${{SAMA_BUILD_IMAGE}}
+        - POETRY_VER=${{POETRY_VER}}
+        - PREFECT_VER=${{PREFECT_VER}}
+        - UV_VER=${{UV_VER}}
+        - PREFECT_API_URL=${{PREFECT_URL}}
+        - PREFECT_API_KEY=${{PREFECT_KEY}}
+        - GCP_PROJ=${{GCP_PROJ}}
+      when:
+        condition:
+          all:
+            should_build: '"${{SAMA_BUILD}}" == "true"'
+  push_to_registry:
+      type: parallel
+      stage: push_image
+      steps:
+        gcp_registry:
+          type: push
+          title: Pushing To GCP
+          candidate: ${{build_container}}
+          tags:
+              - latest
+              - "${{SAMA_BUILD_TAG}}"
+              - "${{CF_SHORT_REVISION}}"
+          registry: narwhal-docker
+          when:
+            condition:
+              all:
+                should_build: '"${{SAMA_BUILD}}" == "true"'
+                gcp_push: '"${{SAMA_BUILD_PROVIDER}}" == "gcp" || "${{SAMA_BUILD_PROVIDER}}" == "all"'
+        aws_registry:
+          type: push
+          title: Pushing to AWS
+          candidate: ${{build_container}}
+          registry: narwhal-ecr
+          tags:
+            - latest
+            - "${{SAMA_BUILD_TAG}}"
+            - "${{CF_SHORT_REVISION}}"
+          when:
+            condition:
+              all:
+                should_build: '"${{SAMA_BUILD}}" == "true"'
+                aws_push: '"${{SAMA_BUILD_PROVIDER}}" == "aws" || "${{SAMA_BUILD_PROVIDER}}" == "all"'

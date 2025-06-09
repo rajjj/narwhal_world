@@ -1,0 +1,5 @@
+{
+    "image_name": "python:3.11-slim-bookworm",
+    "tag": "base",
+    "registry": "aws"
+}

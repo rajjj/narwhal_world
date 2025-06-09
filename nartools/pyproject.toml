@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "nartools"
+version = "5.0.0"
+description = "The Narwhals' library of generalised solutions and tools"
+authors = ["Shaashwat Saraff <ssaraff@samasource.org>"]
+readme = "README.md"
+
+## Dependencies managed outside of Poetry (install using pip in Dockerfile)
+# open3d
+
+## Dependencies not listed explicitly so that we use whatever version automatically comes with the direct dependencies
+# boto3
+# s3fs
+
+# Need to specify python = ">=3.9,<3.12" to satisfy gnss_lib_py and scipy - nartools does not otherwise require this
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+parse = "^1.19.0"
+python-dateutil = "^2.8.2"
+pillow = "^9.4.0"
+scikit-image = "^0.19.3"
+shapely = "^2.0.1"
+numpy = "^1.24.2"
+pyquaternion = "^0.9.9"
+scipy = "^1.11.0"
+requests = "^2.31.0"
+retry = "^0.9.2"
+gnss-lib-py = "^0.1.12"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+fsspec = "^2023.1.0"
+libnar = "^3.1.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "narwhal-pypi"
+url = "https://us-central1-python.pkg.dev/solution-eng-345114/narwhal-pypi/simple/"
+priority = "supplemental"

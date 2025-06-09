@@ -1,0 +1,10 @@
+[project]
+name = "ci-pipeline-builder"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "google-cloud-secret-manager>=2.22.0",
+    "s3fs[boto3]>=2024.12.0",
+]

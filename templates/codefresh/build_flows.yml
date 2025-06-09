@@ -1,0 +1,82 @@
+version: '1.0'
+stages:
+  - clone
+  - get_changes
+  # - update_nps_skip_image
+  - update_nps_build_image
+steps:
+  main_clone:
+      title: Cloning repo
+      type: git-clone
+      stage: clone
+      repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
+      revision: '${{CF_REVISION}}'
+  get_changes:
+      title: Grabbing git changes
+      stage: get_changes
+      image: ${{CI_PIPELINE_IMAGE}}
+      description: Getting git changes setting env variables
+      shell: bash
+      commands:
+        - export GOOGLE_APPLICATION_CREDENTIALS=${{CF_VOLUME_PATH}}/cred.json
+        - mv ${{CI_SCRIPT_DIR}}/${{CI_SCRIPT_NAME}}.py .
+        - export GIT_HASH=${{CF_REVISION}}
+        - export STEP_NAME=${{CI_STEP_NAME}}
+        - python ${{CI_SCRIPT_NAME}}.py
+        - if [ -f ${{SHELL_SCRIPT}} ]; then chmod +x ./${{SHELL_SCRIPT}}; fi
+        - if [ -f ${{SHELL_SCRIPT}} ]; then ./${{SHELL_SCRIPT}}; fi
+        - if [ -f ${{SHELL_SCRIPT}} ]; then source work_dir.txt; fi
+        - if [ -f custom_image.txt ]; then source custom_image.txt; else cp ${{CI_SCRIPT_DIR}}/${{BUILD_SCRIPT_NAME}}/Dockerfile $WORKING_DIR; fi
+        - if [ -f custom_image.txt ]; then cp $IMAGE_LOC/Dockerfile $WORKING_DIR; fi
+        - cp ${{CI_SCRIPT_DIR}}/${{BUILD_SCRIPT_NAME}}/${{BUILD_SCRIPT_NAME}}.py $WORKING_DIR
+        # - cp -r ${{CI_SCRIPT_DIR}}/${{BUILD_SCRIPT_NAME}}/blocks $WORKING_DIR
+        - cp ${{CI_SCRIPT_DIR}}/${{BUILD_SCRIPT_NAME}}/nps_log_config.yml $WORKING_DIR
+  # build_script:
+  #   type: build
+  #   title: UPDATING NPS ONLY
+  #   stage: update_nps_skip_image
+  #   disable_push: true
+  #   description: Updating script data no dockerfile pushed
+  #   working_directory: ${{SAMA_WORK_DIR}}
+  #   dockerfile: Dockerfile
+  #   image_name: ${{SAMA_IMAGE_NAME}}
+  #   build_arguments:
+  #     - PREFECT_API_KEY=${{PREFECT_KEY}}
+  #     - PREFECT_API_URL=${{PREFECT_URL}}
+  #     - REG_NAME=${{SAMA_REG_NAME}}
+  #     - BASE_IMAGE=${{SAMA_BASE_IMAGE}}
+  #     - SCRIPT_NAME=${{SAMA_IMAGE_NAME}}
+  #     - TOML_CHANGE=${{SAMA_TOML_CHANGE}}
+  #     - UPDATE_LIB=${{SAMA_UPDATE_LIB}}
+  #   when:
+  #     condition:
+  #       all:
+  #         should_build: '"${{SAMA_TOML_CHANGE}}" == "NO"'
+  build_container:
+    type: build
+    title: BUILDING IMAGE
+    arguments:
+      buildkit: true
+    stage: update_nps_build_image
+    description: Building docker image
+    working_directory: ${{SAMA_WORK_DIR}}
+    dockerfile: Dockerfile
+    image_name: ${{SAMA_IMAGE_NAME}}
+    registry: ${{SAMA_CF_REG}}
+    tags:
+      - latest
+      - "${{SAMA_BUILD_TAG}}"
+      - "${{SAMA_PYBASE}}"
+      - "${{SAMA_PREFECT_VER}}"
+    build_arguments:
+      - PREFECT_API_KEY=${{PREFECT_KEY}}
+      - PREFECT_API_URL=${{PREFECT_URL}}
+      - REG_NAME=${{SAMA_REG_NAME}}
+      - BASE_IMAGE=${{SAMA_BASE_IMAGE}}
+      - SCRIPT_NAME=${{SAMA_IMAGE_NAME}}
+      - TOML_CHANGE=${{SAMA_TOML_CHANGE}}
+      - UPDATE_LIB=${{SAMA_UPDATE_LIB}}
+    # when:
+    #   condition:
+    #     all:
+    #       should_build: '"${{SAMA_TOML_CHANGE}}" == "YES"'
